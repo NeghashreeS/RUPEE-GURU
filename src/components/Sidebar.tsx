@@ -1,59 +1,95 @@
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, HeartPulse, Flame, MessageSquare, IndianRupee } from 'lucide-react';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  ShieldCheck, 
+  Flame, 
+  MessageSquare, 
+  LogOut, 
+  Settings, 
+  User,
+  Sparkles,
+  ChevronRight
+} from 'lucide-react';
 import { cn } from '../lib/utils';
 
+const NAV_ITEMS = [
+  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/health-score', label: 'Health Score', icon: ShieldCheck },
+  { path: '/fire-plan', label: 'FIRE Planner', icon: Flame },
+  { path: '/chat', label: 'AI Chat Advisor', icon: MessageSquare },
+];
+
 export default function Sidebar() {
-  const location = useLocation();
-
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Health Score', path: '/health', icon: HeartPulse },
-    { name: 'FIRE Planner', path: '/fire', icon: Flame },
-    { name: 'AI Mentor', path: '/chat', icon: MessageSquare },
-  ];
-
   return (
-    <div className="w-64 bg-white border-r border-gray-100 h-screen sticky top-0 flex flex-col">
-      <div className="p-6 flex items-center gap-2">
-        <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-green-200">
-          <IndianRupee size={24} strokeWidth={3} />
+    <aside className="w-80 h-screen bg-white border-r border-gray-100 flex flex-col sticky top-0 z-50">
+      {/* Logo Section */}
+      <div className="p-10">
+        <div className="flex items-center gap-4 group cursor-pointer">
+          <div className="w-14 h-14 bg-emerald-600 rounded-[1.25rem] flex items-center justify-center shadow-2xl shadow-emerald-200 group-hover:scale-110 transition-transform duration-500">
+            <Sparkles className="text-white" size={28} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">RUPEE<br />GURU</h1>
+          </div>
         </div>
-        <h1 className="text-xl font-black tracking-tighter text-gray-800">
-          RUPEE<span className="text-green-600">GURU</span>
-        </h1>
       </div>
 
-      <nav className="flex-1 px-4 py-4 space-y-1">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200",
-                isActive 
-                  ? "bg-green-50 text-green-700 shadow-sm" 
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-              )}
-            >
-              <Icon size={20} />
-              {item.name}
-            </Link>
-          );
-        })}
+      {/* Navigation */}
+      <nav className="flex-1 px-6 space-y-2">
+        <div className="px-4 mb-6">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Main Menu</p>
+        </div>
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) => cn(
+              "flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-300 group",
+              isActive 
+                ? "bg-emerald-50 text-emerald-700 shadow-sm" 
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+            )}
+          >
+            <div className="flex items-center gap-4">
+              <item.icon size={20} className={cn(
+                "transition-transform duration-300 group-hover:scale-110",
+                "group-[.active]:text-emerald-600"
+              )} />
+              <span className="font-bold text-sm">{item.label}</span>
+            </div>
+            <ChevronRight size={14} className={cn(
+              "opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-1",
+              "group-[.active]:opacity-100"
+            )} />
+          </NavLink>
+        ))}
       </nav>
 
-      <div className="p-6">
-        <div className="bg-green-600 rounded-2xl p-4 text-white relative overflow-hidden shadow-xl">
-          <div className="relative z-10">
-            <p className="text-xs font-bold opacity-80 uppercase tracking-widest mb-1">Pro Tip</p>
-            <p className="text-sm font-medium leading-snug">Diversify your portfolio with Index Funds for long-term growth.</p>
+      {/* User Profile / Footer */}
+      <div className="p-8 space-y-6">
+        <div className="bg-gray-900 rounded-[2rem] p-6 text-white relative overflow-hidden group cursor-pointer">
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center font-black text-lg shadow-lg">
+              NS
+            </div>
+            <div>
+              <p className="text-sm font-black">Neha Shree</p>
+              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Premium User</p>
+            </div>
           </div>
-          <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-white/10 rounded-full blur-2xl" />
+          <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-emerald-500/20 transition-colors" />
+        </div>
+
+        <div className="flex items-center justify-between px-4">
+          <button className="p-3 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all active:scale-90">
+            <Settings size={20} />
+          </button>
+          <button className="p-3 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all active:scale-90">
+            <LogOut size={20} />
+          </button>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }

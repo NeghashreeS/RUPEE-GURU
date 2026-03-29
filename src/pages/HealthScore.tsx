@@ -1,188 +1,446 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { HeartPulse, CheckCircle2, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
-import type { FinancialProfile, HealthScoreResult } from '../types';
-import { getHealthScore } from '../services/aiService';
-import { saveHealthScore } from '../services/apiService';
-import { cn } from '../lib/utils';
+import { useState } from "react";
+import { getHealthScore } from "../services/apiService";
+import { exportHealthScorePDF, exportHealthScoreCSV } from "../lib/exportUtils";
+import { Download, FileText, Table } from "lucide-react";
+import type { FinancialProfile, HealthScoreResult } from "../types";
 
 export default function HealthScore() {
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<HealthScoreResult | null>(null);
   const [profile, setProfile] = useState<FinancialProfile>({
     age: 28,
-    monthlyIncome: 80000,
-    monthlyExpenses: 35000,
+    monthlyIncome: 75000,
+    monthlyExpenses: 40000,
     monthlySavings: 25000,
-    totalInvestments: 500000,
+    totalInvestments: 200000,
     totalDebt: 0,
-    emergencyFundMonths: 3,
-    hasInsurance: true,
+    emergencyFundMonths: 0,
+    hasInsurance: false,
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [result, setResult] = useState<HealthScoreResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (field: keyof FinancialProfile, value: string | boolean) => {
+    setProfile((prev) => ({
+      ...prev,
+      [field]: typeof value === "boolean" ? value : Number(value) || value,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    console.log("BUTTON CLICKED: Health Score Submit");
     setLoading(true);
+    setError(null);
+    setResult(null);
     try {
+      console.log("SENDING PROFILE TO API:", profile);
       const data = await getHealthScore(profile);
-      setResult(data);
+      console.log("API DATA RECEIVED:", data);
       
-      // End-to-End: Save to backend
-      setSaving(true);
-      await saveHealthScore(profile, data);
-    } catch (error) {
-      console.error(error);
-      alert("Failed to process. Please try again.");
+      if (!data || typeof data !== 'object') {
+        throw new Error("Invalid response format from AI");
+      }
+      
+      setResult(data);
+    } catch (err: unknown) {
+      console.error("SUBMIT ERROR:", err);
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
-      setSaving(false);
     }
   };
 
+  const gradeColor: Record<string, string> = {
+    Excellent: "#16a34a",
+    Good: "#2563eb",
+    Fair: "#d97706",
+    Critical: "#dc2626",
+  };
+
+  const insightBg: Record<string, string> = {
+    positive: "#f0fdf4",
+    warning: "#fffbeb",
+    critical: "#fef2f2",
+  };
+
+  const insightBorder: Record<string, string> = {
+    positive: "#86efac",
+    warning: "#fcd34d",
+    critical: "#fca5a5",
+  };
+
+  const insightIcon: Record<string, string> = {
+    positive: "✅",
+    warning: "⚠️",
+    critical: "🚨",
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="text-center space-y-2">
-        <h2 className="text-4xl font-black text-gray-900 tracking-tight">Money Health Score</h2>
-        <p className="text-gray-500">Get a professional audit of your finances powered by AI.</p>
+    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "24px" }}>
+      <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "8px" }}>
+        🏥 Financial Health Score
+      </h1>
+      <p style={{ color: "#6b7280", marginBottom: "32px" }}>
+        Fill in your financial details to get an AI-powered health analysis.
+      </p>
+
+      {/* ── Form ── */}
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #e5e7eb",
+          borderRadius: "16px",
+          padding: "28px",
+          marginBottom: "28px",
+        }}
+      >
+        <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "20px" }}>
+          Your Financial Profile
+        </h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "16px",
+          }}
+        >
+          {[
+            { label: "Age", field: "age", placeholder: "28" },
+            { label: "Monthly Income (₹)", field: "monthlyIncome", placeholder: "75000" },
+            { label: "Monthly Expenses (₹)", field: "monthlyExpenses", placeholder: "40000" },
+            { label: "Monthly Savings (₹)", field: "monthlySavings", placeholder: "25000" },
+            { label: "Total Investments (₹)", field: "totalInvestments", placeholder: "200000" },
+            { label: "Total Debt / Loans (₹)", field: "totalDebt", placeholder: "0" },
+            { label: "Emergency Fund (Months)", field: "emergencyFundMonths", placeholder: "0" },
+          ].map(({ label, field, placeholder }) => (
+            <div key={field}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "#374151",
+                  marginBottom: "6px",
+                }}
+              >
+                {label}
+              </label>
+              <input
+                type="number"
+                value={profile[field as keyof FinancialProfile] as number}
+                placeholder={placeholder}
+                onChange={(e) => handleChange(field as keyof FinancialProfile, e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  fontSize: "15px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: "24px",
+            marginTop: "16px",
+            flexWrap: "wrap",
+          }}
+        >
+          {[
+            { label: "Have Insurance?", field: "hasInsurance" },
+          ].map(({ label, field }) => (
+            <label
+              key={field}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "14px",
+                cursor: "pointer",
+                fontWeight: 500,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={profile[field as keyof FinancialProfile] as boolean}
+                onChange={(e) => handleChange(field as keyof FinancialProfile, e.target.checked)}
+                style={{ width: "16px", height: "16px", cursor: "pointer" }}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          style={{
+            marginTop: "24px",
+            width: "100%",
+            padding: "14px",
+            background: loading ? "#9ca3af" : "#16a34a",
+            color: "#fff",
+            border: "none",
+            borderRadius: "10px",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor: loading ? "not-allowed" : "pointer",
+          }}
+        >
+          {loading ? "⏳ Analysing your finances..." : "🔍 Get My Health Score"}
+        </button>
       </div>
 
-      {!result ? (
-        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl">
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your Age</label>
-                <input 
-                  type="number" 
-                  value={profile.age}
-                  onChange={(e) => setProfile({...profile, age: Number(e.target.value)})}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-lg font-bold focus:ring-2 focus:ring-green-500 outline-none transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Monthly Income (₹)</label>
-                <input 
-                  type="number" 
-                  value={profile.monthlyIncome}
-                  onChange={(e) => setProfile({...profile, monthlyIncome: Number(e.target.value)})}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-lg font-bold focus:ring-2 focus:ring-green-500 outline-none transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Monthly Expenses (₹)</label>
-                <input 
-                  type="number" 
-                  value={profile.monthlyExpenses}
-                  onChange={(e) => setProfile({...profile, monthlyExpenses: Number(e.target.value)})}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-lg font-bold focus:ring-2 focus:ring-green-500 outline-none transition-all"
-                />
-              </div>
-            </div>
+      {/* ── Error ── */}
+      {error && (
+        <div
+          style={{
+            padding: "14px 18px",
+            background: "#fef2f2",
+            border: "1px solid #fca5a5",
+            borderRadius: "10px",
+            color: "#dc2626",
+            marginBottom: "24px",
+          }}
+        >
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Debt (₹)</label>
-                <input 
-                  type="number" 
-                  value={profile.totalDebt}
-                  onChange={(e) => setProfile({...profile, totalDebt: Number(e.target.value)})}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-lg font-bold focus:ring-2 focus:ring-green-500 outline-none transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Emergency Fund (Months)</label>
-                <input 
-                  type="number" 
-                  value={profile.emergencyFundMonths}
-                  onChange={(e) => setProfile({...profile, emergencyFundMonths: Number(e.target.value)})}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-lg font-bold focus:ring-2 focus:ring-green-500 outline-none transition-all"
-                />
-              </div>
-              <div className="flex items-center gap-4 pt-8">
-                <button 
-                  type="button"
-                  onClick={() => setProfile({...profile, hasInsurance: !profile.hasInsurance})}
-                  className={cn(
-                    "flex-1 py-4 rounded-2xl font-bold transition-all",
-                    profile.hasInsurance ? "bg-green-600 text-white" : "bg-gray-100 text-gray-500"
-                  )}
-                >
-                  {profile.hasInsurance ? 'Insurance: Yes' : 'Insurance: No'}
-                </button>
-              </div>
+      {/* ── Result ── */}
+      {result && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          {/* Score Card */}
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid #e5e7eb",
+              borderRadius: "16px",
+              padding: "28px",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "72px",
+                fontWeight: 800,
+                color: gradeColor[result.grade] ?? "#111",
+                lineHeight: 1,
+              }}
+            >
+              {result.score ?? "N/A"}
             </div>
+            <div
+              style={{
+                fontSize: "22px",
+                fontWeight: 700,
+                color: gradeColor[result.grade] ?? "#111",
+                marginTop: "8px",
+              }}
+            >
+              {result.grade || "Unknown"}
+            </div>
+            <p style={{ color: "#6b7280", marginTop: "6px" }}>
+              Financial Health Score out of 100
+            </p>
 
-            <div className="md:col-span-2 pt-4">
-              <button 
-                type="submit"
-                disabled={loading}
-                className="w-full bg-green-600 text-white py-6 rounded-[2rem] text-xl font-black shadow-2xl shadow-green-200 hover:bg-green-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+            {/* Export Buttons */}
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "20px" }}>
+              <button
+                onClick={() => exportHealthScorePDF(profile, result)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 16px",
+                  background: "#f3f4f6",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  color: "#374151"
+                }}
               >
-                {loading ? <Loader2 className="animate-spin" /> : <HeartPulse />}
-                {loading ? 'Analyzing Your Finances...' : 'Generate My Health Score'}
+                <FileText size={16} /> Export PDF
+              </button>
+              <button
+                onClick={() => exportHealthScoreCSV(profile, result)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 16px",
+                  background: "#f3f4f6",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  color: "#374151"
+                }}
+              >
+                <Table size={16} /> Export CSV
               </button>
             </div>
-          </form>
-        </div>
-      ) : (
-        <div className="space-y-8 animate-in zoom-in-95 duration-500">
-          <div className="bg-white p-12 rounded-[3rem] border border-gray-100 shadow-2xl text-center relative overflow-hidden">
-            <div className="relative z-10">
-              <p className="text-sm font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Your Financial Health Score</p>
-              <div className="inline-flex items-center justify-center w-48 h-48 rounded-full border-[12px] border-green-50 mb-6 relative">
-                <span className="text-7xl font-black text-green-600">{result.score}</span>
-                <div className="absolute -bottom-2 bg-green-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
-                  {result.grade}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-8">
+
+            {/* Breakdown */}
+            {result.breakdown && typeof result.breakdown === 'object' && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: "12px",
+                  marginTop: "24px",
+                }}
+              >
                 {Object.entries(result.breakdown).map(([key, val]) => (
-                  <div key={key} className="space-y-1">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{key}</p>
-                    <p className="text-xl font-black text-gray-800">{val}/25</p>
+                  <div
+                    key={key}
+                    style={{
+                      background: "#f9fafb",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "10px",
+                      padding: "12px",
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: "22px", fontWeight: 700, color: "#111" }}
+                    >
+                      {val ?? 0}
+                      <span style={{ fontSize: "13px", color: "#6b7280" }}>
+                        /25
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#6b7280",
+                        textTransform: "capitalize",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {key}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Metrics */}
+          {result.metrics && (
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "16px",
+                padding: "24px",
+              }}
+            >
+              <h3 style={{ fontWeight: 600, marginBottom: "16px" }}>
+                📊 Key Metrics
+              </h3>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: "12px",
+                }}
+              >
+                {[
+                  ["Savings Rate", `${result.metrics.savingsRate}%`],
+                  ["Expense Ratio", `${result.metrics.expenseRatio}%`],
+                  ["Risk Level", result.metrics.riskLevel],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    style={{
+                      background: "#f9fafb",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "10px",
+                      padding: "14px",
+                    }}
+                  >
+                    <div style={{ fontSize: "13px", color: "#6b7280" }}>
+                      {label}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "20px",
+                        fontWeight: 700,
+                        marginTop: "4px",
+                      }}
+                    >
+                      {value}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="absolute top-0 left-0 w-full h-2 bg-green-600" />
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-              <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                <CheckCircle2 className="text-green-600" /> Key Insights
+          {/* Insights */}
+          {result.insights && result.insights.length > 0 && (
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "16px",
+                padding: "24px",
+              }}
+            >
+              <h3 style={{ fontWeight: 600, marginBottom: "16px" }}>
+                💡 Insights
               </h3>
-              <ul className="space-y-4">
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {result.insights.map((insight, i) => (
-                  <li key={i} className="flex gap-3 text-gray-600">
-                    <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-2 flex-shrink-0" />
-                    <span className="text-sm font-medium">{insight}</span>
-                  </li>
+                  <div
+                    key={i}
+                    style={{
+                      padding: "12px 16px",
+                      background: insightBg[insight.type],
+                      border: `1px solid ${insightBorder[insight.type]}`,
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {insightIcon[insight.type]} {insight.text}
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
-            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-              <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                <AlertCircle className="text-amber-500" /> Recommendations
-              </h3>
-              <ul className="space-y-4">
-                {result.recommendations.map((rec, i) => (
-                  <li key={i} className="flex gap-3 text-gray-600">
-                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0" />
-                    <span className="text-sm font-medium">{rec}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          )}
 
-          <button 
-            onClick={() => setResult(null)}
-            className="w-full py-4 text-gray-400 font-bold hover:text-gray-600 transition-colors"
-          >
-            Start New Analysis
-          </button>
+          {/* Recommendations */}
+          {result.recommendations && result.recommendations.length > 0 && (
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "16px",
+                padding: "24px",
+              }}
+            >
+              <h3 style={{ fontWeight: 600, marginBottom: "16px" }}>
+                🎯 Recommendations
+              </h3>
+              <ol style={{ paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                {result.recommendations.map((rec, i) => (
+                  <li key={i} style={{ fontSize: "14px", lineHeight: 1.6 }}>
+                    {rec}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
       )}
     </div>
