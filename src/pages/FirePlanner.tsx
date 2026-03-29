@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Flame, Target, TrendingUp, ArrowRight, Loader2, PieChart } from 'lucide-react';
-import { FinancialProfile, FirePlanResult } from '../types';
+import type { FinancialProfile, FirePlanResult } from '../types';
 import { getFirePlan } from '../services/aiService';
+import { saveFirePlan } from '../services/apiService';
 import { cn } from '../lib/utils';
 
 export default function FirePlanner() {
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<FirePlanResult | null>(null);
   const [retirementAge, setRetirementAge] = useState(45);
   const [profile, setProfile] = useState<FinancialProfile>({
@@ -26,11 +28,16 @@ export default function FirePlanner() {
     try {
       const data = await getFirePlan(profile, retirementAge);
       setResult(data);
+
+      // End-to-End: Save to backend
+      setSaving(true);
+      await saveFirePlan(profile, data);
     } catch (error) {
       console.error(error);
       alert("Failed to generate FIRE plan. Please try again.");
     } finally {
       setLoading(false);
+      setSaving(false);
     }
   };
 

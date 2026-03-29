@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { HeartPulse, CheckCircle2, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
-import { FinancialProfile, HealthScoreResult } from '../types';
+import type { FinancialProfile, HealthScoreResult } from '../types';
 import { getHealthScore } from '../services/aiService';
+import { saveHealthScore } from '../services/apiService';
 import { cn } from '../lib/utils';
 
 export default function HealthScore() {
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<HealthScoreResult | null>(null);
   const [profile, setProfile] = useState<FinancialProfile>({
     age: 28,
@@ -25,11 +27,16 @@ export default function HealthScore() {
     try {
       const data = await getHealthScore(profile);
       setResult(data);
+      
+      // End-to-End: Save to backend
+      setSaving(true);
+      await saveHealthScore(profile, data);
     } catch (error) {
       console.error(error);
-      alert("Failed to get health score. Please try again.");
+      alert("Failed to process. Please try again.");
     } finally {
       setLoading(false);
+      setSaving(false);
     }
   };
 

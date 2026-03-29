@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
-import { TrendingUp, Wallet, PieChart, ArrowUpRight, ArrowDownRight, Sparkles } from 'lucide-react';
+import { TrendingUp, Wallet, PieChart, ArrowDownRight, Sparkles } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell, PieChart as RePieChart, Pie
+  Cell, PieChart as RePieChart, Pie
 } from 'recharts';
 
 const DATA = [
@@ -23,6 +23,13 @@ const ASSET_DATA = [
 ];
 
 export default function Dashboard() {
+  const stats = [
+    { label: 'Total Balance', value: '₹12,45,000', icon: Wallet, color: 'text-green-600', bg: 'bg-green-50', trend: '+₹45k' },
+    { label: 'Monthly Savings', value: '₹25,000', icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50', trend: '+12%' },
+    { label: 'Money Health', value: '72/100', icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-50', trend: 'Good' },
+    { label: 'FIRE Target', value: '₹4.2Cr', icon: PieChart, color: 'text-emerald-600', bg: 'bg-emerald-50', trend: 'On Track' },
+  ];
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex justify-between items-end">
@@ -38,12 +45,7 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Total Balance', value: '₹12,45,000', icon: Wallet, color: 'text-green-600', bg: 'bg-green-50', trend: '+₹45k' },
-          { label: 'Monthly Savings', value: '₹25,000', icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50', trend: '+12%' },
-          { label: 'Monthly Expenses', value: '₹21,000', icon: ArrowDownRight, color: 'text-red-600', bg: 'bg-red-50', trend: '-5%' },
-          { label: 'Investments', value: '₹8,90,000', icon: PieChart, color: 'text-purple-600', bg: 'bg-purple-50', trend: '+₹1.2L' },
-        ].map((stat, i) => (
+        {stats.map((stat, i) => (
           <motion.div 
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
