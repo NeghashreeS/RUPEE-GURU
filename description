@@ -1,0 +1,59 @@
+🚀 Rupee Guru – AI-Powered Personal Finance Mentor
+
+Rupee Guru is an AI-powered personal finance mentor designed to simplify financial planning and make smart money decisions accessible to everyone. It helps users analyze their financial health, plan for early retirement, and receive real-time guidance using advanced AI.
+_______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+💡 Features
+💯 Money Health Score
+Analyzes income, expenses, savings, and debt
+Provides a score out of 100
+Gives insights and actionable recommendations
+📊 FIRE (Financial Independence) Planner
+Calculates retirement corpus
+Suggests monthly SIP investments
+Provides asset allocation and long-term strategy
+Visualizes growth using charts
+🤖 AI Chat Mentor
+Answers financial questions in real-time
+Provides simple, practical advice
+Focused on Indian financial context (SIP, PPF, NPS, etc.)
+_______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+How It Works
+User Input → React Frontend → Express Backend → Gemini AI → Response → UI Display
+________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+⚙️ Tech Stack
+Frontend: React (Vite), Tailwind CSS
+Backend: Node.js (Express)
+AI Integration: Google Gemini API
+Charts: Recharts
+________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+🛠 Installation & Setup
+1. Clone the repository
+git clone https://github.com/your-username/RUPEE-GURU.git
+cd RUPEE-GURU
+2. Install dependencies
+npm install
+3. Add environment variables
+
+Create a .env file:
+
+GEMINI_API_KEY=your_api_key_here
+4. Run the app
+npm run dev
+____________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+📸 Demo Flow
+Enter financial details
+Get Money Health Score
+Generate FIRE Plan
+Chat with AI mentor
+____________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+📊 Impact
+Makes financial planning accessible to everyone
+Reduces dependency on expensive advisors
+Helps users improve savings and investment decisions
+Encourages data-driven financial behavior
+_____________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+“From confusion to clarity — your AI guide to financial freedom.”
